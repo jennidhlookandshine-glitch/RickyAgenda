@@ -1,0 +1,231 @@
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color-scheme: dark;
+  color: #ffffff;
+}
+
+/* Fondo general */
+html,
+body {
+  margin: 0;
+  padding: 0;
+
+  /* ❌ height: 100%;  -> causa corte en móvil */
+  min-height: 100dvh;              /* ✅ */
+  background-image: url("/fondocapitan.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center top;
+  overflow-x: hidden;              /* ✅ evita scroll lateral */
+}
+
+/* Contenedor principal */
+#root,
+.app-root {
+  min-height: 100dvh;               /* ✅ */
+  position: relative;
+  overflow-y: auto;                /* ✅ SCROLL */
+}
+
+/* Contenedor interno tipo celular */
+.app-inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 10px 12px;
+  box-sizing: border-box;
+  position: relative;              /* ✅ */
+  z-index: 2;                      /* ✅ sobre viñeta */
+}
+
+/* Card principal (si la usas) */
+.main-card {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+/* Viñeta para enfocar el centro */
+.app-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.55);
+
+  z-index: 1;                      /* ✅ antes 5 */
+}
+
+/* ================= MODAL NOTAS ================= */
+
+.note-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50; /* por encima de .app-root y .ricky-top */
+}
+
+.note-modal {
+  width: 90%;
+  max-width: 380px;
+  max-height: 80vh;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(125, 249, 255, 0.7);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* RICKY centrado arriba */
+.ricky-top {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+
+  font-size: 2.2rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #7df9ff;
+  text-shadow:
+    0 0 6px #ffffff,
+    0 0 16px #7df9ff,
+    0 0 32px #7df9ff,
+    0 0 48px #00aaff;
+}
+
+/* ================= NOTAS ================= */
+
+.notes-wrapper {
+  padding: 130px 16px 110px;  /* ✅ más espacio arriba y abajo */
+  max-width: 520px;
+  margin: 0 auto;
+  color: #e5e7eb;
+  text-align: left;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;                /* ✅ */
+}
+
+.notes-header {
+  display: flex;
+  flex-direction: column;    /* ✅ evita amontonamiento */
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.notes-header h2 {
+  font-size: 1.1rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f9fafb;
+}
+
+/* Grid de notas */
+.notes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* Card de nota tipo glass */
+.note-card {
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.9),
+    0 0 10px rgba(15, 23, 42, 0.9);
+  padding: 12px 14px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 140px;
+  box-sizing: border-box;
+}
+
+/* Inputs */
+.note-input {
+  width: 100%;
+  padding: 8px 10px;          /* ✅ más cómodo en móvil */
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.8);
+  color: #f9fafb;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.note-input:focus {
+  border-color: rgba(125, 249, 255, 0.9);
+  box-shadow: 0 0 6px rgba(125, 249, 255, 0.8);
+}
+
+/* =============== BARRA INFERIOR =============== */
+
+.bottom-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+/* Botones tabs */
+.tab-button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 249, 255, 0.7);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* Ajustes móvil */
+@media (max-width: 768px) {
+  .ricky-top {
+    top: 18px;
+    font-size: 1.8rem;
+    letter-spacing: 0.2em;
+  }
+
+  .notes-wrapper {
+    padding: 120px 12px 120px; /* ✅ MÁS espacio abajo */
+    max-width: 100%;
+  }
+
+  .bottom-bar {
+    bottom: 10px;
+    gap: 8px;
+  }
+
+  .tab-button {
+    padding: 6px 10px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Ajuste extra para pantallas muy pequeñas */
+@media (max-width: 400px) {
+  .ricky-top {
+    top: 14px;
+    font-size: 1.6rem;
+    letter-spacing: 0.16em;
+  }
+
+  .notes-wrapper {
+    padding: 100px 10px 120px; /* ✅ */
+  }
+}
