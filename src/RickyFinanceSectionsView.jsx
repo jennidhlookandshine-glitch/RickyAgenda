@@ -1,6 +1,8 @@
 // src/RickyFinanceSectionsView.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import capitanAlerta from "./assets/capitan-alerta.jpg";
+import Header from "./Header";
 
 const formatCLP = (value) =>
   new Intl.NumberFormat("es-CL", {
@@ -31,11 +33,72 @@ function RickyFinanceSectionsView() {
     }
   });
 
-  // NUEVO: estado para el modal de eliminación
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [newSectionName, setNewSectionName] = useState("");
   const [newSectionType, setNewSectionType] = useState("simple");
+
+  // FORM SIMPLE
+  const [simpleTitle, setSimpleTitle] = useState("");
+  const [simpleAmount, setSimpleAmount] = useState("");
+  const [editingSimpleId, setEditingSimpleId] = useState(null);
+
+  // FORM CUOTAS
+  const [debtTitle, setDebtTitle] = useState("");
+  const [debtTotal, setDebtTotal] = useState("");
+  const [debtInstallments, setDebtInstallments] = useState("");
+  const [debtPaid, setDebtPaid] = useState("");
+  const [debtNote, setDebtNote] = useState("");
+  const [editingDebtId, setEditingDebtId] = useState(null);
+
+  // FORM A FAVOR
+  const [favorReason, setFavorReason] = useState("");
+  const [favorAmount, setFavorAmount] = useState("");
+  const [favorInstallments, setFavorInstallments] = useState("");
+  const [favorPaid, setFavorPaid] = useState("");
+  const [favorStatus, setFavorStatus] = useState("pendiente");
+  const [editingFavorId, setEditingFavorId] = useState(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("ricky-sections", JSON.stringify(sections));
+    } catch (error) {
+      console.error("Error al guardar secciones de finanzas", error);
+    }
+  }, [sections]);
+
+  const activeSection =
+    sections.find((s) => s.id === activeSectionId) || null;
+
+  /* ================= SECCIONES ================= */
+
+  const handleAddSection = (e) => {
+    e.preventDefault();
+    if (!newSectionName.trim()) return;
+
+    const newSection = {
+      id: Date.now(),
+      name: newSectionName.trim(),
+      type: newSectionType, // simple | cuotas | aFavor
+      items: [],
+    };
+
+    const updated = [newSection, ...sections];
+    setSections(updated);
+    setActiveSectionId(newSection.id);
+    setNewSectionName("");
+    setNewSectionType("simple");
+  };
+
+  const handleDeleteSection = (id) => {
+    const section = sections.find((s) => s.id === id);
+
+    setDeleteTarget({
+      type: "section",
+      sectionId: id,
+      name: section ? section.name : "esta sección",
+    });
+  };
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
@@ -84,68 +147,8 @@ function RickyFinanceSectionsView() {
 
   const handleCancelDelete = () => setDeleteTarget(null);
 
-  // FORM SIMPLE
-  const [simpleTitle, setSimpleTitle] = useState("");
-  const [simpleAmount, setSimpleAmount] = useState("");
-  const [editingSimpleId, setEditingSimpleId] = useState(null);
+  /* ================= ITEMS SIMPLE ================= */
 
-  // FORM CUOTAS
-  const [debtTitle, setDebtTitle] = useState("");
-  const [debtTotal, setDebtTotal] = useState("");
-  const [debtInstallments, setDebtInstallments] = useState("");
-  const [debtPaid, setDebtPaid] = useState("");
-  const [debtNote, setDebtNote] = useState("");
-  const [editingDebtId, setEditingDebtId] = useState(null);
-
-  // FORM DEUDAS A FAVOR (me deben)
-  const [favorReason, setFavorReason] = useState("");
-  const [favorAmount, setFavorAmount] = useState("");
-  const [favorInstallments, setFavorInstallments] = useState("");
-  const [favorPaid, setFavorPaid] = useState("");
-  const [favorStatus, setFavorStatus] = useState("pendiente");
-  const [editingFavorId, setEditingFavorId] = useState(null);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("ricky-sections", JSON.stringify(sections));
-    } catch (error) {
-      console.error("Error al guardar secciones de finanzas", error);
-    }
-  }, [sections]);
-
-  const activeSection =
-    sections.find((s) => s.id === activeSectionId) || null;
-
-  // -------- SECCIONES --------
-  const handleAddSection = (e) => {
-    e.preventDefault();
-    if (!newSectionName.trim()) return;
-
-    const newSection = {
-      id: Date.now(),
-      name: newSectionName.trim(),
-      type: newSectionType, // simple | cuotas | aFavor
-      items: [],
-    };
-
-    const updated = [newSection, ...sections];
-    setSections(updated);
-    setActiveSectionId(newSection.id);
-    setNewSectionName("");
-    setNewSectionType("simple");
-  };
-
-  const handleDeleteSection = (id) => {
-    const section = sections.find((s) => s.id === id);
-
-    setDeleteTarget({
-      type: "section",
-      sectionId: id,
-      name: section ? section.name : "esta sección",
-    });
-  };
-
-  // -------- ITEMS SIMPLE --------
   const handleAddOrSaveSimpleItem = (e) => {
     e.preventDefault();
     if (
@@ -202,12 +205,35 @@ function RickyFinanceSectionsView() {
     });
   };
 
+  // botón PAGADO simple: guarda fecha día/mes/año
+  const handleMarkSimplePaid = (sectionId, itemId) => {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = now.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? {
+              ...s,
+              items: s.items.map((it) =>
+                it.id === itemId ? { ...it, paidAt: formattedDate } : it
+              ),
+            }
+          : s
+      )
+    );
+  };
+
   const totalSimpleSection =
     activeSection && activeSection.type === "simple"
       ? activeSection.items.reduce((sum, it) => sum + it.amount, 0)
       : 0;
 
-  // -------- ITEMS CUOTAS --------
+  /* ================= ITEMS CUOTAS ================= */
+
   const handleAddDebtItem = (e) => {
     e.preventDefault();
     if (!activeSection || activeSection.type !== "cuotas") return;
@@ -302,6 +328,7 @@ function RickyFinanceSectionsView() {
     });
   };
 
+  // Pagar 1 cuota: marca paid, y guarda última fecha (day/month/year)
   const handlePayOneInstallment = (sectionId, itemId) => {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, "0");
@@ -326,6 +353,7 @@ function RickyFinanceSectionsView() {
               ...item,
               paid: newPaid,
               lastPaidAt: formattedDate,
+              paidAt: formattedDate, // para el resumen mensual
             };
           }),
         };
@@ -344,10 +372,7 @@ function RickyFinanceSectionsView() {
 
   const totalDebtSection =
     activeSection && activeSection.type === "cuotas"
-      ? activeSection.items.reduce(
-          (sum, it) => sum + calcularSaldoItem(it),
-          0
-        )
+      ? activeSection.items.reduce((sum, it) => sum + calcularSaldoItem(it), 0)
       : 0;
 
   const totalCuotasSection =
@@ -364,7 +389,8 @@ function RickyFinanceSectionsView() {
         }, 0)
       : 0;
 
-  // -------- ITEMS A FAVOR (me deben) --------
+  /* ================= ITEMS A FAVOR ================= */
+
   const calcularSaldoFavor = (item) => {
     const cuota = item.amount || 0;
     const totales = item.installments || 0;
@@ -417,7 +443,7 @@ function RickyFinanceSectionsView() {
         amount,
         installments,
         paid,
-        status: favorStatus, // pendiente | pagado
+        status: favorStatus,
       };
       const updatedSections = sections.map((s) =>
         s.id === activeSection.id ? { ...s, items: [newItem, ...s.items] } : s
@@ -455,6 +481,7 @@ function RickyFinanceSectionsView() {
     });
   };
 
+  // Me pagó: suma una cuota y guarda paidAt (día/mes/año)
   const handleMarkFavorPaid = (sectionId, itemId) => {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, "0");
@@ -497,25 +524,15 @@ function RickyFinanceSectionsView() {
 
   const totalFavorPendiente =
     activeSection && activeSection.type === "aFavor"
-      ? activeSection.items.reduce(
-          (sum, it) => sum + calcularSaldoFavor(it),
-          0
-        )
+      ? activeSection.items.reduce((sum, it) => sum + (it.amount || 0), 0)
       : 0;
+
+  /* ================= RENDER ================= */
 
   return (
     <div className="app-root">
-      <div className="ricky-top">RICKY</div>
-
       <div className="notes-wrapper">
-        <header className="notes-header">
-          <h2>Finanzas</h2>
-          <p
-            style={{ fontSize: "0.9rem", color: "#aaa", marginTop: "4px" }}
-          >
-            Organiza tus gastos, deudas y lo que otras personas te deben.
-          </p>
-        </header>
+        <Header title="💰 Finanzas" showBack={true} />
 
         {/* FORM SECCIÓN NUEVA */}
         <form
@@ -528,14 +545,15 @@ function RickyFinanceSectionsView() {
           }}
         >
           <input
-            className="note-input"
+            className="note-input finanzas-field"
             type="text"
             placeholder='Nombre de sección (ej: "Gastos hogar")'
             value={newSectionName}
             onChange={(e) => setNewSectionName(e.target.value)}
           />
+
           <select
-            className="note-input"
+            className="note-input finanzas-field"
             value={newSectionType}
             onChange={(e) => setNewSectionType(e.target.value)}
           >
@@ -543,7 +561,8 @@ function RickyFinanceSectionsView() {
             <option value="cuotas">Deudas en cuotas</option>
             <option value="aFavor">Me deben</option>
           </select>
-          <button type="submit" className="add-note-button">
+
+          <button type="submit" className="add-note-button finanzas-field">
             Crear sección
           </button>
         </form>
@@ -608,7 +627,7 @@ function RickyFinanceSectionsView() {
                       color: "#fca5a5",
                     }}
                   >
-                    ✕
+                    🗑️
                   </span>
                 </button>
               ))}
@@ -749,30 +768,9 @@ function RickyFinanceSectionsView() {
 
                       <button
                         type="button"
-                        onClick={() => {
-                          const now = new Date();
-                          const day = String(now.getDate()).padStart(2, "0");
-                          const month = String(
-                            now.getMonth() + 1
-                          ).padStart(2, "0");
-                          const year = now.getFullYear();
-                          const formattedDate = `${day}/${month}/${year}`;
-
-                          setSections((prev) =>
-                            prev.map((s) =>
-                              s.id === activeSection.id
-                                ? {
-                                    ...s,
-                                    items: s.items.map((it) =>
-                                      it.id === item.id
-                                        ? { ...it, paidAt: formattedDate }
-                                        : it
-                                    ),
-                                  }
-                                : s
-                            )
-                          );
-                        }}
+                        onClick={() =>
+                          handleMarkSimplePaid(activeSection.id, item.id)
+                        }
                         style={{
                           background: "rgba(34, 197, 94, 0.8)",
                           border: "none",
@@ -943,8 +941,9 @@ function RickyFinanceSectionsView() {
                           Monto cuota: {formatCLP(item.cuotaValue)}
                         </p>
                         <small style={{ color: "#aaa" }}>
-                          Cuotas totales: {item.installments} • Cuotas pagadas:{" "}
-                          {item.paid} • Cuotas restantes: {remainingInstallments}
+                          Cuotas totales: {item.installments}{" "}
+                          Cuotas pagadas: {item.paid}{" "}
+                          Cuotas restantes: {remainingInstallments}
                         </small>
 
                         {item.lastPaidAt && (
@@ -1050,7 +1049,7 @@ function RickyFinanceSectionsView() {
           </div>
         )}
 
-        {/* SECCIÓN A FAVOR (ME DEBEN) */}
+        {/* SECCIÓN A FAVOR */}
         {activeSection && activeSection.type === "aFavor" && (
           <div
             style={{
@@ -1081,7 +1080,7 @@ function RickyFinanceSectionsView() {
               <input
                 className="note-input"
                 type="text"
-                placeholder="Motivo (ej: servicio, préstamo)"
+                placeholder="Motivo (ej: servicio)"
                 value={favorReason}
                 onChange={(e) => setFavorReason(e.target.value)}
               />
@@ -1176,7 +1175,7 @@ function RickyFinanceSectionsView() {
                         </small>
                         {cuotas > 0 && (
                           <small style={{ color: "#aaa" }}>
-                            Cuotas totales: {cuotas} • Pagadas: {pagadas} •
+                            Cuotas totales: {cuotas} Pagadas: {pagadas}{" "}
                             Pendientes: {pendientes}
                           </small>
                         )}
@@ -1197,9 +1196,7 @@ function RickyFinanceSectionsView() {
                           </small>
                         )}
                         {saldo > 0 && item.status !== "pagado" && (
-                          <small style={{ color: "#fbbf24" }}>
-                            {/* aquí podrías mostrar saldo si quieres */}
-                          </small>
+                          <small style={{ color: "#fbbf24" }}></small>
                         )}
                       </div>
 
@@ -1278,15 +1275,6 @@ function RickyFinanceSectionsView() {
       </div>
 
       <div className="bottom-bar">
-        <Link to="/" className="tab-button">
-          INICIO
-        </Link>
-        <Link to="/notas" className="tab-button">
-          NOTAS
-        </Link>
-        <Link to="/calendario" className="tab-button">
-          CALENDARIO
-        </Link>
         <Link to="/resumen-mensual" className="tab-button">
           RESUMEN
         </Link>
@@ -1308,7 +1296,8 @@ function RickyFinanceSectionsView() {
             style={{
               width: "90%",
               maxWidth: "360px",
-              background: "radial-gradient(circle at top, #1e3a8a, #020617)",
+              background:
+                "radial-gradient(circle at top, #1e3a8a, #020617)",
               borderRadius: "16px",
               padding: "16px 18px 14px",
               border: "1px solid rgba(125,249,255,0.7)",
@@ -1321,7 +1310,7 @@ function RickyFinanceSectionsView() {
             }}
           >
             <img
-              src="/capitan-alerta.jpg"
+              src={capitanAlerta}
               alt=""
               style={{
                 position: "absolute",
@@ -1391,7 +1380,7 @@ function RickyFinanceSectionsView() {
                   }}
                   onClick={handleConfirmDelete}
                 >
-                  Sí, borrar
+                  SÍ, borrar
                 </button>
               </div>
             </div>

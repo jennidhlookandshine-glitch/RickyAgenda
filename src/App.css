@@ -1,231 +1,477 @@
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color-scheme: dark;
   color: #ffffff;
 }
 
-/* Fondo general */
+/* ===== FONDO GENERAL ===== */
 html,
 body {
   margin: 0;
   padding: 0;
-
-  /* ❌ height: 100%;  -> causa corte en móvil */
-  min-height: 100dvh;              /* ✅ */
-  background-image: url("/fondocapitan.jpg");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center top;
-  overflow-x: hidden;              /* ✅ evita scroll lateral */
+  min-height: 100dvh;
+  background: url("/fondocapitan.jpg") center top / cover no-repeat;
+  overflow-x: hidden;
 }
 
-/* Contenedor principal */
+/* ===== CONTENEDORES ===== */
 #root,
 .app-root {
-  min-height: 100dvh;               /* ✅ */
-  position: relative;
-  overflow-y: auto;                /* ✅ SCROLL */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
-/* Contenedor interno tipo celular */
+
+
 .app-inner {
-  max-width: 480px;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 8px 10px 12px;
-  box-sizing: border-box;
-  position: relative;              /* ✅ */
-  z-index: 2;                      /* ✅ sobre viñeta */
+  padding: 96px 16px 112px;   /* menos arriba, un poco arriba de la barra */
+  position: relative;
+  z-index: 3;
 }
 
-/* Card principal (si la usas) */
-.main-card {
-  border-radius: 24px;
-  overflow: hidden;
-}
-
-/* Viñeta para enfocar el centro */
+/* ===== VIÑETA ===== */
 .app-root::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.55);
-
-  z-index: 1;                      /* ✅ antes 5 */
+  z-index: 1;
 }
 
-/* ================= MODAL NOTAS ================= */
-
-.note-modal-overlay {
+/* ===== EFECTO LUZ ===== */
+.hero-glow {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: radial-gradient(circle at center, rgba(125, 249, 255, 0.22), transparent 60%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ===== TÍTULO HOME ===== */
+@keyframes pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.03);
+    opacity: 0.9;
+  }
+}
+
+.ricky-top {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 2.1rem;
+  letter-spacing: 0.25em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #e5f6ff;
+  text-shadow: 0 0 6px rgba(0,0,0,0.7), 0 0 14px #7df9ff;
+  animation: pulse 3.5s ease-in-out infinite;
+}
+
+/* ===== HEADER GLOBAL ===== */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 16px;
+  background: linear-gradient(
+    to bottom,
+    rgba(15,23,42,0.95),
+    rgba(15,23,42,0.7),
+    transparent
+  );
+  backdrop-filter: blur(12px);
+  z-index: 20;
+}
+
+.header-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  text-align: center;
+  flex: 1;
+  text-shadow: 0 0 6px rgba(0,0,0,0.9);
+}
+
+.back-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #e5e7eb;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50; /* por encima de .app-root y .ricky-top */
+  margin-right: 12px;
 }
 
-.note-modal {
-  width: 90%;
-  max-width: 380px;
-  max-height: 80vh;
-  background: rgba(15, 23, 42, 0.95);
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid rgba(125, 249, 255, 0.7);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
-  overflow-y: auto;
-  box-sizing: border-box;
+.back-button:active {
+  transform: scale(0.95);
 }
 
-/* RICKY centrado arriba */
-.ricky-top {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-
-  font-size: 2.2rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: #7df9ff;
-  text-shadow:
-    0 0 6px #ffffff,
-    0 0 16px #7df9ff,
-    0 0 32px #7df9ff,
-    0 0 48px #00aaff;
-}
-
-/* ================= NOTAS ================= */
-
+/* ===== CONTENIDO GENERALES (NOTAS) ===== */
 .notes-wrapper {
-  padding: 130px 16px 110px;  /* ✅ más espacio arriba y abajo */
+  padding: 130px 16px 170px;  /* arriba, lados, abajo */
   max-width: 520px;
   margin: 0 auto;
-  color: #e5e7eb;
-  text-align: left;
-  box-sizing: border-box;
   position: relative;
-  z-index: 2;                /* ✅ */
+  z-index: 3;
 }
 
-.notes-header {
-  display: flex;
-  flex-direction: column;    /* ✅ evita amontonamiento */
-  gap: 10px;
-  margin-bottom: 12px;
+
+
+.notes-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 24px;
+  z-index: -1;
 }
 
-.notes-header h2 {
-  font-size: 1.1rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #f9fafb;
+/* ===== FINANZAS (bajar) ===== */
+.finanzas-wrapper {
+  padding-top: 112px !important;
 }
 
-/* Grid de notas */
+/* Campos alineados en Finanzas */
+.finanzas-field {
+  width: 100%;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+/* ===== CARDS NOTAS ===== */
 .notes-grid {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 14px;
 }
 
-/* Card de nota tipo glass */
 .note-card {
-  background: rgba(15, 23, 42, 0.75);
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  box-shadow:
-    0 18px 40px rgba(15, 23, 42, 0.9),
-    0 0 10px rgba(15, 23, 42, 0.9);
-  padding: 12px 14px;
-  backdrop-filter: blur(10px);
+  background: rgba(20, 25, 40, 0.95);
+  border-radius: 20px;
+  border: 1px solid rgba(125, 249, 255, 0.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  padding: 16px 18px;
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-height: 140px;
-  box-sizing: border-box;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Inputs */
+.note-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.8);
+}
+
+.note-card h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.note-card p.note-text {
+  font-size: 0.95rem;
+  color: #e0e7ff;
+  margin: 0 0 8px;
+  line-height: 1.4;
+  max-height: 4.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-date {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  text-align: right;
+}
+
+/* ===== BOTONES NOTAS ===== */
+.note-card .note-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.note-card .note-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+  color: #fff;
+}
+
+.note-card .note-actions button:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.note-card .note-actions .edit-btn { background: #3b82f6; }
+.note-card .note-actions .delete-btn { background: #ef4444; }
+
+/* ===== PRIORIDAD ===== */
+.note-card.normal {
+  border-left: 5px solid #7df9ff;
+}
+.note-card.importante {
+  border-left: 5px solid #facc15;
+  background: rgba(35, 30, 45, 0.95);
+}
+.note-card.urgente {
+  border-left: 5px solid #ef4444;
+  background: rgba(45, 25, 35, 0.95);
+}
+
+.note-priority-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.note-priority-buttons button {
+  flex: 1;             /* los tres reparten el ancho */
+  min-width: 0;        /* permite encoger el contenido */
+  white-space: nowrap; /* que no se parta en dos líneas */
+}
+
+/* ===== INPUT ===== */
 .note-input {
   width: 100%;
-  padding: 8px 10px;          /* ✅ más cómodo en móvil */
+  padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.5);
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.85);
   color: #f9fafb;
-  font-size: 0.9rem;
-  outline: none;
 }
 
 .note-input:focus {
-  border-color: rgba(125, 249, 255, 0.9);
+  outline: none;
+  border-color: #7df9ff;
   box-shadow: 0 0 6px rgba(125, 249, 255, 0.8);
 }
 
-/* =============== BARRA INFERIOR =============== */
-
+/* ===== BARRa INFERIOR ===== */
 .bottom-bar {
   position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  gap: 10px;
-  z-index: 10;
-  backdrop-filter: blur(8px);
+  justify-content: space-around;   /* separa botones */
+  gap: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.6), transparent);
+  z-index: 20;
 }
 
-/* Botones tabs */
 .tab-button {
-  padding: 8px 14px;
+  flex: 1;
+  max-width: 90px;
+  text-align: center;
+  padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(125, 249, 255, 0.7);
-  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid #0f172a;
+  background: #0b1120;
   color: #e5e7eb;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-/* Ajustes móvil */
+/* ===== MODAL / SEGURIDAD ===== */
+.pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.pin-modal {
+  background: rgba(15, 23, 42, 0.95);
+  padding: 22px;
+  border-radius: 18px;
+  width: 90%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+}
+
+.note-modal {
+  margin: 0 12px;          /* o 16px si quieres más */
+  width: auto;             /* que se adapte al espacio */
+  max-width: 100%;         /* que no sobrepase la pantalla */
+  box-sizing: border-box;  /* incluye el padding en el ancho */
+}
+
+.pin-display {
+  font-size: 28px;
+  margin: 10px 0;
+}
+
+.pin-keyboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pin-keyboard button {
+  font-size: 18px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+/* ===== PATRÓN ===== */
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 60px);
+  gap: 12px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.pattern-dot {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #1f2933;
+  border: 2px solid #334155;
+}
+
+.pattern-dot.active {
+  background: #4fc3f7;
+}
+
+/* ===== MÁS ===== */
+.mas-grid {
+  margin-top: 120px;   /* baja las tarjetas bajo el header */
+  display: grid;
+  gap: 16px;
+}
+
+.mas-card {
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 20px;
+  padding: 18px;
+  font-size: 17px;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+.mas-card span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.75;
+  margin-top: 6px;
+}
+
+/* ===== TEXTOS ===== */
+.section-title {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.error {
+  color: #ff6b6b;
+  margin-top: 10px;
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .ricky-top {
-    top: 18px;
     font-size: 1.8rem;
-    letter-spacing: 0.2em;
-  }
-
-  .notes-wrapper {
-    padding: 120px 12px 120px; /* ✅ MÁS espacio abajo */
-    max-width: 100%;
-  }
-
-  .bottom-bar {
-    bottom: 10px;
-    gap: 8px;
-  }
-
-  .tab-button {
-    padding: 6px 10px;
-    font-size: 0.7rem;
   }
 }
 
-/* Ajuste extra para pantallas muy pequeñas */
 @media (max-width: 400px) {
   .ricky-top {
-    top: 14px;
     font-size: 1.6rem;
     letter-spacing: 0.16em;
   }
-
-  .notes-wrapper {
-    padding: 100px 10px 120px; /* ✅ */
-  }
 }
+
+/* ===== CALENDARIO ===== */
+.calendar-weekdays {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  column-gap: 8px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.calendar-wrapper {
+  padding: 130px 16px 180px;  /* arriba, lados, abajo */
+  max-width: 520px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 3;
+}
+
+
+/* ===== RESUMEN ===== */
+
+.resumen-wrapper {
+  padding: 130px 16px 170px;  /* arriba, lados, abajo */
+  max-width: 520px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 3;
+}
+
+.resumen-card {
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.7);
+}
+

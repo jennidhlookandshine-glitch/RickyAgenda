@@ -1,55 +1,75 @@
 // src/RickyNotesView.jsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import capitanAlerta from "./assets/capitan-alerta.jpg";
+import Header from "./Header";
+
+
 
 function RickyNotesView() {
+  const navigate = useNavigate();
+
+
+
+  // ================= ESTADO =================
   const [notes, setNotes] = useState(() => {
     try {
-      const guardadas = window.localStorage.getItem("ricky-notes");
-      if (!guardadas) return [];
-      const parsed = JSON.parse(guardadas);
+      const saved = localStorage.getItem("ricky-notes");
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
       return parsed.map((n) => ({
-        ...n,
+        id: n.id || Date.now(),
+        title: n.title || "Sin título",
+        text: n.text || "Sin contenido",
+        date: n.date || new Date().toLocaleDateString("es-CL"),
         color: n.color || "normal",
         dueDate: n.dueDate || "",
       }));
-    } catch (error) {
-      console.error("Error al leer notas guardadas", error);
+    } catch (err) {
+      console.error("Error al leer notas guardadas", err);
       return [];
     }
   });
 
-  useEffect(() => {
-    window.localStorage.setItem("ricky-notes", JSON.stringify(notes));
-  }, [notes]);
+
 
   const [newTitle, setNewTitle] = useState("");
   const [newText, setNewText] = useState("");
+  const [newColor, setNewColor] = useState("normal");
   const [search, setSearch] = useState("");
   const [openedNote, setOpenedNote] = useState(null);
-
-  // Modal eliminación
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [toast, setToast] = useState("");
+  const [filterColor, setFilterColor] = useState("todas");
+  const [modalVisible, setModalVisible] = useState(false);
+
+
 
   const hasNotes = notes.length > 0;
 
+
+
+  // ================= FILTROS =================
   const filteredNotes = notes
     .filter((note) => {
-      if (!search.trim()) return true;
-      const term = search.toLowerCase();
-      return (
-        note.title.toLowerCase().includes(term) ||
-        note.text.toLowerCase().includes(term)
-      );
+      const matchesSearch =
+        !search.trim() ||
+        note.title.toLowerCase().includes(search.toLowerCase()) ||
+        note.text.toLowerCase().includes(search.toLowerCase());
+      const matchesColor = filterColor === "todas" || note.color === filterColor;
+      return matchesSearch && matchesColor;
     })
-    .sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      return dateB - dateA;
-    });
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+
+
+  // ================= FUNCIONES =================
   const handleAdd = () => {
     if (!newTitle.trim() && !newText.trim()) return;
+
+
 
     const today = new Date();
     const dateStr = today.toLocaleDateString("es-CL", {
@@ -58,60 +78,94 @@ function RickyNotesView() {
       year: "numeric",
     });
 
+
+
     const newNote = {
       id: Date.now(),
       title: newTitle || "Sin título",
       text: newText || "Sin contenido",
       date: dateStr.toUpperCase(),
-      color: "normal",
+      color: newColor,
       dueDate: "",
     };
+
+
 
     setNotes((prev) => [newNote, ...prev]);
     setNewTitle("");
     setNewText("");
+    setNewColor("normal");
+    setToast("Nota agregada ✅");
+    setTimeout(() => setToast(""), 2000);
   };
 
-  // Abrir modal de borrado
+
+
   const handleDelete = (id) => {
     const note = notes.find((n) => n.id === id);
-    setDeleteTarget({
-      id,
-      name: note ? note.title : "esta nota",
-    });
+    setDeleteTarget({ id, name: note ? note.title : "esta nota" });
+    setDeleteAllConfirm(false);
+    setModalVisible(true);
   };
 
-  // Confirmar borrado
+
+
+  const handleDeleteAllModal = () => {
+    setDeleteTarget({ id: null, name: "todas las notas" });
+    setDeleteAllConfirm(true);
+    setModalVisible(true);
+  };
+
+
+
   const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    const updated = notes.filter((note) => note.id !== deleteTarget.id);
-    setNotes(updated);
-    window.localStorage.setItem("ricky-notes", JSON.stringify(updated));
-    if (openedNote && openedNote.id === deleteTarget.id) {
-      setOpenedNote(null);
+    if (deleteAllConfirm) {
+      setNotes([]);
+    } else if (deleteTarget) {
+      setNotes((prev) => prev.filter((n) => n.id !== deleteTarget.id));
+      if (openedNote?.id === deleteTarget.id) setOpenedNote(null);
     }
     setDeleteTarget(null);
+    setDeleteAllConfirm(false);
+    setModalVisible(false);
   };
 
-  const handleCancelDelete = () => setDeleteTarget(null);
 
-  const handleDeleteAll = () => {
-    const confirmar = window.confirm(
-      "¿Seguro que quieres borrar TODAS las notas?"
-    );
-    if (!confirmar) return;
-    setNotes([]);
-    window.localStorage.setItem("ricky-notes", JSON.stringify([]));
+
+  const handleCancelDelete = () => {
+    setDeleteTarget(null);
+    setDeleteAllConfirm(false);
+    setModalVisible(false);
   };
+
+
+
+  const openEditModal = (note) => {
+    setOpenedNote(note);
+    setModalVisible(true);
+  };
+
+
 
   const saveOpenedNote = () => {
     if (!openedNote) return;
-
     setNotes((prev) =>
-      prev.map((n) => (n.id === openedNote.id ? openedNote : n))
+      prev.map((n) => (n.id === openedNote.id ? { ...openedNote } : n))
     );
     setOpenedNote(null);
+    setModalVisible(false);
+    setToast("Nota guardada ✅");
+    setTimeout(() => setToast(""), 2000);
   };
+
+
+
+  const updateOpenedNote = (field, value) => {
+    if (!openedNote) return;
+    setOpenedNote({ ...openedNote, [field]: value });
+  };
+
+
 
   const getNoteBackground = (color) => {
     if (color === "urgente") return "rgba(229, 57, 53, 0.6)";
@@ -119,15 +173,63 @@ function RickyNotesView() {
     return "rgba(15, 23, 42, 0.8)";
   };
 
+
+
+  const colorNames = {
+    todas: "Todas",
+    normal: "Normal",
+    importante: "Importante",
+    urgente: "Urgente",
+  };
+
+
+
+  const colorValues = {
+    todas: "#6b7280",
+    normal: "#1e90ff",
+    importante: "#ffb300",
+    urgente: "#e53935",
+  };
+
+
+
+  // ================= GUARDAR EN LOCALSTORAGE =================
+  useEffect(() => {
+    localStorage.setItem("ricky-notes", JSON.stringify(notes));
+  }, [notes]);
+
+
+
+  // ================= JSX =================
   return (
     <div className="app-root">
       <div className="app-inner">
-        <div className="ricky-top">RICKY</div>
+        <Header title="Notas" showBack={true} />
+
+
+
+        {toast && (
+          <div
+            style={{
+              position: "fixed",
+              top: "12px",
+              right: "12px",
+              background: "#1e90ff",
+              color: "#fff",
+              padding: "8px 14px",
+              borderRadius: "6px",
+              zIndex: 100,
+            }}
+          >
+            {toast}
+          </div>
+        )}
+
+
 
         <div className="notes-wrapper">
+          {/* BUSCADOR */}
           <header className="notes-header">
-            <h2>Notas</h2>
-
             <input
               className="note-input"
               type="text"
@@ -138,6 +240,47 @@ function RickyNotesView() {
             />
           </header>
 
+
+
+          {/* FILTRO POR COLOR */}
+          <div
+            style={{
+              margin: "12px 0",
+              display: "flex",
+              gap: "8px",
+              justifyContent: "center",
+            }}
+          >
+            {Object.keys(colorNames).map((f) => {
+              const isActive = filterColor === f;
+              return (
+                <button
+                  key={f}
+                  className="add-note-button"
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "12px",
+                    border: "none",
+                    fontWeight: "bold",
+                    background: isActive
+                      ? colorValues[f]
+                      : "rgba(15,23,42,0.8)",
+                    color: "#fff",
+                    boxShadow: isActive ? `0 0 10px ${colorValues[f]}` : "none",
+                    cursor: "pointer",
+                    transition: "0.2s all",
+                  }}
+                  onClick={() => setFilterColor(f)}
+                >
+                  {colorNames[f]}
+                </button>
+              );
+            })}
+          </div>
+
+
+
+          {/* NUEVA NOTA */}
           <form
             className="note-card note-editor"
             onSubmit={(e) => {
@@ -165,8 +308,26 @@ function RickyNotesView() {
                 }
               }}
             />
+            <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+              {["normal", "importante", "urgente"].map((color) => (
+                <button
+                  type="button"
+                  key={color}
+                  className="add-note-button"
+                  style={{
+                    background: newColor === color ? colorValues[color] : undefined,
+                  }}
+                  onClick={() => setNewColor(color)}
+                >
+                  {color.charAt(0).toUpperCase() + color.slice(1)}
+                </button>
+              ))}
+            </div>
           </form>
 
+
+
+          {/* LISTA DE NOTAS */}
           {hasNotes ? (
             <div className="notes-grid">
               {filteredNotes.length > 0 ? (
@@ -185,34 +346,21 @@ function RickyNotesView() {
                       </span>
                     </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        marginTop: "6px",
-                      }}
-                    >
-                      <button
-                        className="add-note-button"
-                        style={{ padding: "4px 10px" }}
-                        onClick={() => setOpenedNote(note)}
-                      >
-                        Editar
+
+
+                    {/* ACCIONES DE NOTA */}
+                    <div className="note-actions">
+                      <button className="edit-btn" onClick={() => openEditModal(note)}>
+                        ✏️ Editar
                       </button>
-                      <button
-                        className="add-note-button"
-                        style={{ padding: "4px 10px" }}
-                        onClick={() => handleDelete(note.id)}
-                      >
-                        Eliminar
+                      <button className="delete-btn" onClick={() => handleDelete(note.id)}>
+                        🗑️ Eliminar
                       </button>
                     </div>
                   </article>
                 ))
               ) : (
-                <p className="no-notes-text">
-                  No se encontraron notas para “{search}”.
-                </p>
+                <p className="no-notes-text">No se encontraron notas para “{search}”.</p>
               )}
             </div>
           ) : (
@@ -221,108 +369,84 @@ function RickyNotesView() {
             </p>
           )}
 
+
+
           {hasNotes && (
             <div style={{ marginTop: "12px", textAlign: "center" }}>
-              <button
-                className="add-note-button"
-                style={{ padding: "6px 14px" }}
-                onClick={handleDeleteAll}
-              >
+              <button className="add-note-button" onClick={handleDeleteAllModal}>
                 Borrar todas las notas
               </button>
             </div>
           )}
         </div>
 
-        {openedNote && (
+
+
+        {/* MODAL NOTA ABIERTA */}
+        {openedNote && modalVisible && !deleteAllConfirm && (
           <div
-            className="note-modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 70,
+              opacity: modalVisible ? 1 : 0,
+              transition: "opacity 0.3s ease-in-out",
+            }}
             onClick={() => setOpenedNote(null)}
           >
             <div
-              className="note-modal"
+              style={{
+                width: "90%",
+                maxWidth: "400px",
+                background: "radial-gradient(circle at top, #1e3a8a, #020617)",
+                borderRadius: "16px",
+                padding: "16px 18px",
+                border: "1px solid rgba(125,249,255,0.7)",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.9), 0 0 18px rgba(59,130,246,0.7)",
+                color: "#e5e7eb",
+                position: "relative",
+                overflow: "hidden",
+                transform: modalVisible ? "scale(1)" : "scale(0.8)",
+                transition: "transform 0.3s ease-in-out",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <input
                 className="note-input"
                 type="text"
                 value={openedNote.title}
-                onChange={(e) =>
-                  setOpenedNote((prev) =>
-                    prev ? { ...prev, title: e.target.value } : prev
-                  )
-                }
+                onChange={(e) => updateOpenedNote("title", e.target.value)}
               />
-
               <textarea
                 className="note-textarea"
-                rows={8}
+                rows={6}
                 value={openedNote.text}
-                onChange={(e) =>
-                  setOpenedNote((prev) =>
-                    prev ? { ...prev, text: e.target.value } : prev
-                  )
-                }
+                onChange={(e) => updateOpenedNote("text", e.target.value)}
               />
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  marginBottom: "8px",
-                }}
-              >
-                <button
-                  type="button"
-                  className="add-note-button"
-                  style={{
-                    padding: "4px 8px",
-                    background:
-                      openedNote.color === "normal" ? "#1e90ff" : undefined,
-                  }}
-                  onClick={() =>
-                    setOpenedNote((prev) =>
-                      prev ? { ...prev, color: "normal" } : prev
-                    )
-                  }
-                >
-                  Normal
-                </button>
-                <button
-                  type="button"
-                  className="add-note-button"
-                  style={{
-                    padding: "4px 8px",
-                    background:
-                      openedNote.color === "importante"
-                        ? "#ffb300"
-                        : undefined,
-                  }}
-                  onClick={() =>
-                    setOpenedNote((prev) =>
-                      prev ? { ...prev, color: "importante" } : prev
-                    )
-                  }
-                >
-                  Importante
-                </button>
-                <button
-                  type="button"
-                  className="add-note-button"
-                  style={{
-                    padding: "4px 8px",
-                    background:
-                      openedNote.color === "urgente" ? "#e53935" : undefined,
-                  }}
-                  onClick={() =>
-                    setOpenedNote((prev) =>
-                      prev ? { ...prev, color: "urgente" } : prev
-                    )
-                  }
-                >
-                  Urgente
-                </button>
+
+
+              <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                {["normal", "importante", "urgente"].map((color) => (
+                  <button
+                    key={color}
+                    className="add-note-button"
+                    style={{
+                      background:
+                        openedNote.color === color ? colorValues[color] : undefined,
+                    }}
+                    onClick={() => updateOpenedNote("color", color)}
+                  >
+                    {color.charAt(0).toUpperCase() + color.slice(1)}
+                  </button>
+                ))}
               </div>
+
+
 
               <label
                 style={{
@@ -339,38 +463,28 @@ function RickyNotesView() {
                   type="date"
                   className="note-input"
                   value={openedNote.dueDate || ""}
-                  onChange={(e) =>
-                    setOpenedNote((prev) =>
-                      prev ? { ...prev, dueDate: e.target.value } : prev
-                    )
-                  }
+                  onChange={(e) => updateOpenedNote("dueDate", e.target.value)}
                 />
               </label>
 
+
+
               <span className="note-date">Creada: {openedNote.date}</span>
 
+
+
               <div
-                style={{ display: "flex", gap: "8px", marginTop: "10px" }}
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  marginTop: "10px",
+                  justifyContent: "center",
+                }}
               >
-                <button
-                  className="add-note-button"
-                  style={{ padding: "4px 10px" }}
-                  onClick={saveOpenedNote}
-                >
+                <button className="add-note-button" onClick={saveOpenedNote}>
                   Guardar
                 </button>
-                <button
-                  className="add-note-button"
-                  style={{ padding: "4px 10px" }}
-                  onClick={() => handleDelete(openedNote.id)}
-                >
-                  Eliminar
-                </button>
-                <button
-                  className="add-note-button"
-                  style={{ padding: "4px 10px" }}
-                  onClick={() => setOpenedNote(null)}
-                >
+                <button className="add-note-button" onClick={() => setOpenedNote(null)}>
                   Cerrar
                 </button>
               </div>
@@ -378,129 +492,90 @@ function RickyNotesView() {
           </div>
         )}
 
-        <div className="bottom-bar">
-          <Link to="/" className="tab-button">
-            INICIO
-          </Link>
-          <Link to="/calendario" className="tab-button">
-            CALENDARIO
-          </Link>
-          <Link to="/finanzas" className="tab-button">
-            FINANZAS
-          </Link>
-        </div>
-      </div>
 
-      {/* MODAL CAPITÁN AMÉRICA PARA ELIMINAR NOTA */}
-      {deleteTarget && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 60,
-          }}
-        >
+
+        {/* MODAL CONFIRMACIÓN ELIMINAR / BORRAR TODAS */}
+        {modalVisible && (deleteTarget || deleteAllConfirm) && (
           <div
             style={{
-              width: "90%",
-              maxWidth: "360px",
-              background:
-                "radial-gradient(circle at top, #1e3a8a, #020617)",
-              borderRadius: "16px",
-              padding: "16px 18px 14px",
-              border: "1px solid rgba(125,249,255,0.7)",
-              boxShadow:
-                "0 20px 40px rgba(0,0,0,0.9), 0 0 18px rgba(59,130,246,0.7)",
-              color: "#e5e7eb",
-              textAlign: "center",
-              position: "relative",
-              overflow: "hidden",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 60,
+              opacity: modalVisible ? 1 : 0,
+              transition: "opacity 0.3s ease-in-out",
             }}
+            onClick={handleCancelDelete}
           >
-            <img
-              src="/capitan-alerta.jpg"
-              alt=""
+            <div
               style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: 0.18,
-                pointerEvents: "none",
+                width: "90%",
+                maxWidth: "360px",
+                background: "radial-gradient(circle at top, #1e3a8a, #020617)",
+                borderRadius: "16px",
+                padding: "16px 18px 14px",
+                border: "1px solid rgba(125,249,255,0.7)",
+                boxShadow:
+                  "0 20px 40px rgba(0,0,0,0.9), 0 0 18px rgba(59,130,246,0.7)",
+                color: "#e5e7eb",
+                textAlign: "center",
+                position: "relative",
+                overflow: "hidden",
+                transform: modalVisible ? "scale(1)" : "scale(0.8)",
+                transition: "transform 0.3s ease-in-out",
               }}
-            />
-
-            <div style={{ position: "relative" }}>
-              <h3
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={capitanAlerta}
+                alt=""
                 style={{
-                  margin: "0 0 8px",
-                  fontSize: "1rem",
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: "#7df9ff",
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  opacity: 0.18,
+                  pointerEvents: "none",
                 }}
-              >
-                ¿Eliminar esta nota?
-              </h3>
-              <p
-                style={{
-                  fontSize: "0.85rem",
-                  margin: "0 0 10px",
-                  color: "#e5e7eb",
-                }}
-              >
-                Vas a borrar{" "}
-                <span
-                  style={{ fontWeight: "bold", color: "#f97316" }}
-                >
-                  {deleteTarget.name}
-                </span>{" "}
-                de tus notas. Esta acción no se puede deshacer.
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "10px",
-                  marginTop: "8px",
-                }}
-              >
-                <button
-                  type="button"
-                  className="add-note-button"
+              />
+              <div style={{ position: "relative" }}>
+                <h3
                   style={{
-                    padding: "6px 14px",
-                    background: "rgba(15,23,42,0.9)",
+                    margin: "0 0 8px",
+                    fontSize: "1rem",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "#7df9ff",
                   }}
-                  onClick={handleCancelDelete}
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="add-note-button"
-                  style={{
-                    padding: "6px 14px",
-                    background: "rgba(220,38,38,0.9)",
-                    borderColor: "rgba(248,113,113,0.9)",
-                  }}
-                  onClick={handleConfirmDelete}
-                >
-                  Sí, borrar
-                </button>
+                  ¿Eliminar {deleteAllConfirm ? "todas las notas" : "esta nota"}?
+                </h3>
+                <p style={{ fontSize: "0.85rem", margin: "0 0 10px", color: "#e5e7eb" }}>
+                  Vas a borrar{" "}
+                  <span style={{ fontWeight: "bold", color: "#f97316" }}>{deleteTarget?.name}</span>. Esta acción no se puede deshacer.
+                </p>
+                <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "8px" }}>
+                  <button className="add-note-button" style={{ padding: "6px 14px", background: "rgba(15,23,42,0.9)" }} onClick={handleCancelDelete}>
+                    Cancelar
+                  </button>
+                  <button className="add-note-button" style={{ padding: "6px 14px", background: "rgba(220,38,38,0.9)", borderColor: "rgba(248,113,113,0.9)" }} onClick={handleConfirmDelete}>
+                    Sí, borrar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
+
+
 export default RickyNotesView;
+

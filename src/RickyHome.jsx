@@ -1,25 +1,19 @@
-// src/RickyHome.jsx
 import { Link } from "react-router-dom";
 
 function RickyHome() {
   return (
     <div className="app-root">
+      <div className="hero-glow" />
+
       <div className="app-inner">
-        <div className="ricky-top">RICKY</div>
+        <h1 className="ricky-top">RICKY</h1>
+      </div>
 
-        {/* Aquí solo se ve la portada con el fondo */}
-
-        <div className="bottom-bar">
-          <Link to="/notas" className="tab-button">
-            NOTAS
-          </Link>
-          <Link to="/calendario" className="tab-button">
-            CALENDARIO
-          </Link>
-          <Link to="/finanzas" className="tab-button">
-            FINANZAS
-          </Link>
-        </div>
+      {/* BARRA INFERIOR SIMPLE */}
+      <div className="bottom-bar">
+        <Link to="/notas" className="tab-button">📝 Notas</Link>
+        <Link to="/calendario" className="tab-button">📅 Calendario</Link>
+        <Link to="/mas" className="tab-button">⚙️ Más</Link>
       </div>
     </div>
   );
